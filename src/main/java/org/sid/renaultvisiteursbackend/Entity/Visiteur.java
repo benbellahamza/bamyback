@@ -21,7 +21,11 @@ public class Visiteur  extends Person {
     private String cin;
     private String destination;
     private String motif;
+    private String telephone;
+    private String matricule;
+    private String typeVisiteur;
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime dateEntree;
+    private LocalDateTime dateSortie;
 }
