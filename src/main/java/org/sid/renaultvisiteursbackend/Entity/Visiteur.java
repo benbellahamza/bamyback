@@ -20,7 +20,7 @@ public class Visiteur  extends Person {
     private String genre;
     private String cin;
     private String destination;
-    private String motif;
+//    private String motif;
     private String telephone;
     private String matricule;
     private String typeVisiteur;
