@@ -1,15 +1,8 @@
 package org.sid.renaultvisiteursbackend.Security;
 
-
-
-
-
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import org.sid.renaultvisiteursbackend.Entity.Admin;
 import org.sid.renaultvisiteursbackend.Entity.Person;
-import org.sid.renaultvisiteursbackend.Repository.AdminRepository;
 import org.sid.renaultvisiteursbackend.Repository.PersonRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +23,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -43,7 +38,8 @@ import java.util.Arrays;
 public class SecurityConfig {
     @Autowired
     private PersonRepository personRepository;
-    private final  String secretKey = "MIICXgIBAAKBgQDNPVn9YUqJ/C9vDkwMP0xCVK218XCZeaPgvL3unAXSHcaWMUOP\n" +
+
+    private final String secretKey = "MIICXgIBAAKBgQDNPVn9YUqJ/C9vDkwMP0xCVK218XCZeaPgvL3unAXSHcaWMUOP\n" +
             "yb89nEfem3YHRwHJUpQkWIa7iFyMDZDxcg3TYl/Tx3vl6fm7Scj6emDwtb5iQIGF\n" +
             "S7/LgSipW081HYcAzHvTpoA4wv+0wqD52VE2S0FVXL3K+FT7YzGFGv2jUwIDAQAB\n" +
             "AoGBAKRFccyrXYTZ84FZGSdIVppUuoEBEZXV1YQgrYjZGpOVv4ghQClLWiVO+/tB\n" +
@@ -56,80 +52,81 @@ public class SecurityConfig {
             "PlKGXUFGBM24o/fCGIDo5oijjLtcyRk3lHIDnXl2vi+fLgs1lX/YJ0VVAsCnwcJ+\n" +
             "7GI1GNvErkowenaGLTgBAkEApNjd2a4onsY4wunNREvmrOSKdIScOrq89ywx5qwG\n" +
             "VXv3jbIKvsLYhWepWZmRvlgyFOFwMef04a77LPW3ZtHQEw==";
-//    @Bean
-//    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
-//        PasswordEncoder passwordEncoder = passwordEncoder();
-//        return  new InMemoryUserDetailsManager(
-//                User.withUsername("souhail").password(passwordEncoder.encode("1234")).authorities("USER").build(),
-//                User.withUsername("admin").password(passwordEncoder.encode("1234")).authorities("USER","ADMIN").build()
-//
-//        );
-//    }
-
 
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
             Person person = personRepository.findByEmail(username);
             if (person == null) {
-                throw new UsernameNotFoundException("User non trouvé avec username  : " + username);
+                throw new UsernameNotFoundException("Utilisateur introuvable avec l'email : " + username);
             }
+
+            if (!person.isActif()) {
+                throw new UsernameNotFoundException("⚠️ Ce compte est désactivé.");
+            }
+
             return User.withUsername(person.getEmail())
                     .password(person.getPassword())
                     .authorities(person.getRole())
                     .build();
         };
     }
+
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity.sessionManagement(sm->sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .csrf(c->c.disable())
-                //.httpBasic(Customizer.withDefaults())
+        return httpSecurity
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                .oauth2ResourceServer(ao->ao.jwt(Customizer.withDefaults()))
-                .authorizeHttpRequests(ar->ar.requestMatchers("/auth/**").permitAll())
-                .authorizeHttpRequests(ar-> ar.requestMatchers("/content/**").permitAll())
-
-                .authorizeHttpRequests(ar->ar.anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .authorizeHttpRequests(ar -> ar.requestMatchers("/auth/**", "/content/**").permitAll())
+                .authorizeHttpRequests(ar -> ar.anyRequest().authenticated())
                 .build();
     }
 
-
     @Bean
-    JwtEncoder jwtEncoder(){
+    public JwtEncoder jwtEncoder() {
         return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey.getBytes()));
     }
-    @Bean
-    JwtDecoder jwtDecoder(){
-        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(),"RSA");
-        return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS256).build();
 
-    }
     @Bean
-    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService){
+    public JwtDecoder jwtDecoder() {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "RSA");
+        return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS256).build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
         daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         return new ProviderManager(daoAuthenticationProvider);
     }
 
-    // methode pour allowed hosts
-
     @Bean
-    CorsConfigurationSource corsConfigurationSource(){
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200")); // ✅ au lieu de *
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // ajoute PATCH
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true); // important car tu utilises JWT
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthorityPrefix("");
 
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        return jwtAuthenticationConverter;
+    }
 }

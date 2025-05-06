@@ -1,5 +1,6 @@
 package org.sid.renaultvisiteursbackend.Service;
 
+import org.sid.renaultvisiteursbackend.Controller.AdminController;
 import org.sid.renaultvisiteursbackend.Dto.AdminDTO;
 import org.sid.renaultvisiteursbackend.Dto.CreateUserRequest;
 import org.sid.renaultvisiteursbackend.Entity.Admin;
@@ -11,7 +12,6 @@ import org.sid.renaultvisiteursbackend.Repository.AdminRepository;
 import org.sid.renaultvisiteursbackend.Repository.PersonRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +23,6 @@ public class AdminService {
     private final PersonRepository personRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ✅ Constructeur pour tout injecter
     public AdminService(AdminRepository adminRepository,
                         AdminMapper adminMapper,
                         PersonRepository personRepository,
@@ -34,17 +33,11 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /**
-     * ✅ Créer un nouvel Admin
-     */
     public AdminDTO createAdmin(AdminDTO dto) {
         Admin saved = adminRepository.save(adminMapper.toEntity(dto));
         return adminMapper.toDTO(saved);
     }
 
-    /**
-     * ✅ Liste de tous les Admins
-     */
     public List<AdminDTO> getAllAdmins() {
         return adminRepository.findAll()
                 .stream()
@@ -52,11 +45,7 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * ✅ Ajouter un Agent, Responsable, ou Admin
-     */
     public CreateUserRequest ajouterUtilisateur(CreateUserRequest request) {
-        // Vérifier si email existe déjà
         if (personRepository.findByEmail(request.getEmail()) != null) {
             throw new RuntimeException("Un utilisateur avec cet email existe déjà.");
         }
@@ -79,16 +68,14 @@ public class AdminService {
         user.setNom(request.getNom());
         user.setPrenom(request.getPrenom());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); // 🔒 Cryptage
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole().toUpperCase());
+        user.setActif(true);
 
         personRepository.save(user);
         return request;
     }
 
-    /**
-     * ✅ Modifier les informations d'un utilisateur
-     */
     public void modifierUtilisateur(Long id, CreateUserRequest request) {
         Person utilisateur = personRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -101,9 +88,6 @@ public class AdminService {
         personRepository.save(utilisateur);
     }
 
-    /**
-     * ✅ Réinitialiser le mot de passe d'un utilisateur
-     */
     public void reinitialiserMotDePasse(Long id, String newPassword) {
         Person utilisateur = personRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -111,4 +95,32 @@ public class AdminService {
         utilisateur.setPassword(passwordEncoder.encode(newPassword));
         personRepository.save(utilisateur);
     }
+
+    public void desactiverUtilisateur(Long id) {
+        Person utilisateur = personRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        if ("ADMIN".equalsIgnoreCase(utilisateur.getRole())) {
+            throw new RuntimeException("Impossible de désactiver un administrateur.");
+        }
+
+        utilisateur.setActif(!utilisateur.isActif());
+        personRepository.save(utilisateur);
+    }
+
+    // ✅ Nouvelle méthode : uniquement les utilisateurs avec un rôle non null
+    public List<AdminController.UserResponse> getUtilisateursAvecRole() {
+        return personRepository.findAll().stream()
+                .filter(person -> person.getRole() != null) // Ne pas inclure les visiteurs (role null)
+                .map(p -> new AdminController.UserResponse(
+                        p.getId(),
+                        p.getNom(),
+                        p.getPrenom(),
+                        p.getEmail(),
+                        p.getRole(),
+                        p.isActif()
+                ))
+                .collect(Collectors.toList());
+    }
 }
+
