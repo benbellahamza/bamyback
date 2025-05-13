@@ -2,14 +2,19 @@ package org.sid.renaultvisiteursbackend.Controller;
 
 import org.sid.renaultvisiteursbackend.Dto.AdminDTO;
 import org.sid.renaultvisiteursbackend.Dto.CreateUserRequest;
+import org.sid.renaultvisiteursbackend.Dto.PasswordChangeRequest;
 import org.sid.renaultvisiteursbackend.Dto.ResetPasswordRequest;
 import org.sid.renaultvisiteursbackend.Entity.HistoriqueAction;
 import org.sid.renaultvisiteursbackend.Repository.PersonRepository;
 import org.sid.renaultvisiteursbackend.Service.AdminService;
 import org.sid.renaultvisiteursbackend.Service.HistoriqueService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admins")
@@ -64,7 +69,14 @@ public class AdminController {
     public List<HistoriqueAction> getHistorique() {
         return historiqueService.getAllActions();
     }
-
+    @PostMapping("/changer-motdepasse")
+    public void changerMotDePasse(@RequestBody PasswordChangeRequest request) {
+        adminService.changerMotDePasse(
+                request.getEmail(),
+                request.getAncienMotDePasse(),
+                request.getNouveauMotDePasse()
+        );
+    }
     public record UserResponse(
             Long id,
             String nom,

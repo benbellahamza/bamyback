@@ -12,6 +12,7 @@ import org.sid.renaultvisiteursbackend.Repository.AdminRepository;
 import org.sid.renaultvisiteursbackend.Repository.PersonRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -108,10 +109,9 @@ public class AdminService {
         personRepository.save(utilisateur);
     }
 
-    // ✅ Nouvelle méthode : uniquement les utilisateurs avec un rôle non null
     public List<AdminController.UserResponse> getUtilisateursAvecRole() {
         return personRepository.findAll().stream()
-                .filter(person -> person.getRole() != null) // Ne pas inclure les visiteurs (role null)
+                .filter(person -> person.getRole() != null)
                 .map(p -> new AdminController.UserResponse(
                         p.getId(),
                         p.getNom(),
@@ -122,5 +122,22 @@ public class AdminService {
                 ))
                 .collect(Collectors.toList());
     }
-}
 
+    public void changerMotDePasse(String email, String ancien, String nouveau) {
+        if (ancien == null || nouveau == null) {
+            throw new IllegalArgumentException("Les champs mot de passe ne peuvent pas être null");
+        }
+
+        Person utilisateur = personRepository.findByEmail(email);
+        if (utilisateur == null) {
+            throw new RuntimeException("Utilisateur introuvable.");
+        }
+
+        if (!passwordEncoder.matches(ancien, utilisateur.getPassword())) {
+            throw new RuntimeException("Ancien mot de passe incorrect.");
+        }
+
+        utilisateur.setPassword(passwordEncoder.encode(nouveau));
+        personRepository.save(utilisateur);
+    }
+}
