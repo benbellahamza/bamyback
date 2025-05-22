@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AdminMapper {
-
     public AdminDTO toDTO(Admin admin) {
         AdminDTO dto = new AdminDTO();
         dto.setId(admin.getId());
@@ -14,7 +13,6 @@ public class AdminMapper {
         dto.setPassword(admin.getPassword());
         return dto;
     }
-
     public Admin toEntity(AdminDTO dto) {
         Admin admin = new Admin();
         admin.setId(dto.getId());

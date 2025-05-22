@@ -8,5 +8,5 @@ public class CreateUserRequest {
     private String prenom;
     private String email;
     private String password;
-    private String role; // "ADMIN", "AGENT", "RESPONSABLE"
+    private String role;
 }

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,18 +16,13 @@ public class Camion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String numeroChassis;
-
-    private String marque; // ex: Renault, Forlend, Kaycenne
-
-    private String modele; // dépend de la marque
-
+    private String marque;
+    private String modele;
     @OneToOne(cascade = CascadeType.ALL)
-    private Chauffeur chauffeurEntree; // pour l’entrée
-
+    private Chauffeur chauffeurEntree;
     private LocalDateTime dateEntree;
-
+    private LocalDateTime dateSortie;
     @OneToOne(cascade = CascadeType.ALL)
-    private Livraison livraison; // null tant que le camion n’a pas encore quitté
+    private Livraison livraison;
 }

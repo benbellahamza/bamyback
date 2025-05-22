@@ -11,7 +11,6 @@ public class CompteurController {
     public CompteurController(CompteurVisiteService compteurService) {
         this.compteurService = compteurService;
     }
-
     @GetMapping
     public int getCompteur() {
         return compteurService.getCompteurDuJour();

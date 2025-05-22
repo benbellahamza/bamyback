@@ -11,18 +11,15 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "historique_action") // S'assurer que le nom de la table est correct
+@Table(name = "historique_action")
 public class HistoriqueAction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "agent") // Correspond à la colonne dans MySQL
+    @Column(name = "agent")
     private String agent;
-
-    @Column(name = "action") // Correspond à la colonne dans MySQL
+    @Column(name = "action")
     private String action;
-
     @Column(name = "date_action")
     private LocalDateTime dateAction;
 }

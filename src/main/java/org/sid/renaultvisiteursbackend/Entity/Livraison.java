@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,14 +19,10 @@ public class Livraison {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String destination; // park, livraison finale, etc.
-
+    private String destination;
     private String nomChauffeurSortie;
     private String prenomChauffeurSortie;
     private String cinChauffeurSortie;
-
     private String entreprise;
-
     private LocalDateTime dateSortie;
 }

@@ -7,19 +7,17 @@ import org.sid.renaultvisiteursbackend.Entity.Camion;
 import org.sid.renaultvisiteursbackend.Service.CamionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/livraison")
 @RequiredArgsConstructor
 public class CamionController {
-
     private final CamionService service;
-
     @PostMapping("/entree")
     public ResponseEntity<Camion> enregistrerEntree(@RequestBody EntreeCamionDTO dto) {
         return ResponseEntity.ok(service.enregistrerEntree(dto));
     }
-
     @PostMapping("/sortie/{numeroChassis}")
     public ResponseEntity<Camion> enregistrerSortie(
             @PathVariable String numeroChassis,
@@ -27,12 +25,15 @@ public class CamionController {
     ) {
         return ResponseEntity.ok(service.enregistrerSortie(numeroChassis, dto));
     }
-
     @GetMapping("/camion/{numeroChassis}")
     public ResponseEntity<Camion> rechercher(@PathVariable String numeroChassis) {
         return service.getCamion(numeroChassis)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+    @GetMapping("/all")
+    public ResponseEntity<List<Camion>> getAllCamions() {
+        return ResponseEntity.ok(service.getAllCamions());
     }
 }
 

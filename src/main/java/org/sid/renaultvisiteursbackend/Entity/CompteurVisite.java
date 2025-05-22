@@ -17,8 +17,6 @@ public class CompteurVisite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private int compteur = 0;
-
     private LocalDate date = LocalDate.now();
 }

@@ -12,5 +12,4 @@ public class PersonRequestLogin {
     private String email;
     private String Role;
     private String password;
-
 }

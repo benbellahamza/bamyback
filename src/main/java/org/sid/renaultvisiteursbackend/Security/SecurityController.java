@@ -17,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity(prePostEnabled = true)
 @CrossOrigin("*")
 public class SecurityController {
-
     @Autowired
     private JwtEncoder jwtEncoder;
     @Autowired
@@ -40,7 +38,6 @@ public class SecurityController {
     private AuthenticationManager authenticationManager;
     @Autowired
     private PasswordEncoder passwordEncoder;
-
     @Autowired
     private AdminRepository adminRepository;
     @Autowired
@@ -64,12 +61,10 @@ public class SecurityController {
                             personRequestLogin.getPassword()
                     )
             );
-
             String email = authentication.getName();
             String scope = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.joining(" ")); // Ex: "ADMIN"
-
             // 🔐 Construction du token
             JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                     .issuedAt(now)
@@ -77,43 +72,33 @@ public class SecurityController {
                     .subject(email) // important pour retrouver l'utilisateur
                     .claim("scope", scope)
                     .build();
-
             JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
                     JwsHeader.with(MacAlgorithm.HS256).build(),
                     jwtClaimsSet
             );
-
             String jwt = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
-
             tokens.put("access-token", jwt);
             tokens.put("role", scope); // utilisé par Angular
-
             return ResponseEntity.ok(tokens);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
-
     //new modification f securitycontroller
-
     @PostMapping("/update-password")
     public ResponseEntity<Map<String, String>> updatePassword(@RequestBody Map<String, String> body, Authentication authentication) {
         try {
-            String email = authentication.getName(); // récupère l'utilisateur connecté
+            String email = authentication.getName();
             String ancien = body.get("ancienMotDePasse");
             String nouveau = body.get("nouveauMotDePasse");
-
             Person user = personRepository.findByEmail(email);
-
             if (user == null || !passwordEncoder.matches(ancien, user.getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "error", "Ancien mot de passe incorrect"
                 ));
             }
-
             user.setPassword(passwordEncoder.encode(nouveau));
             personRepository.save(user);
-
             return ResponseEntity.ok(Map.of("message", "Mot de passe mis à jour avec succès"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
@@ -121,10 +106,6 @@ public class SecurityController {
             ));
         }
     }
-
-
-
-
     @PostMapping("/register")
     public Map<String, String> register(@RequestBody PersonRequestRegister request) {
         try {
@@ -132,10 +113,8 @@ public class SecurityController {
             if (existing != null) {
                 throw new RuntimeException("This User is Already Registered !");
             }
-
             String role = request.getRole().toUpperCase();
             Person user;
-
             switch (role) {
                 case "ADMIN":
                     Admin admin = new Admin();
@@ -176,7 +155,6 @@ public class SecurityController {
                 default:
                     throw new IllegalArgumentException("Rôle invalide : " + role);
             }
-
             // 🔐 Génération du token
             Instant now = Instant.now();
             JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
@@ -185,15 +163,12 @@ public class SecurityController {
                     .subject(user.getEmail())
                     .claim("scope", role)
                     .build();
-
             JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
                     JwsHeader.with(MacAlgorithm.HS256).build(),
                     jwtClaimsSet
             );
-
             String jwt = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
             return Map.of("access-token", jwt);
-
         } catch (Exception e) {
             return Map.of("error", e.getMessage());
         }

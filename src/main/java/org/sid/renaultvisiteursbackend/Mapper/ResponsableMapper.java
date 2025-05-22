@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ResponsableMapper {
-
     public ResponsableDTO toDTO(Responsable responsable) {
         ResponsableDTO dto = new ResponsableDTO();
         dto.setId(responsable.getId());
@@ -14,7 +13,6 @@ public class ResponsableMapper {
         dto.setPassword(responsable.getPassword());
         return dto;
     }
-
     public Responsable toEntity(ResponsableDTO dto) {
         Responsable responsable = new Responsable();
         responsable.setId(dto.getId());

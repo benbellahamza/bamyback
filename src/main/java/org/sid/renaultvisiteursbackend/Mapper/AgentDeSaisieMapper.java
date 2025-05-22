@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AgentDeSaisieMapper {
-
     public AgentDeSaisieDTO toDTO(AgentDeSaisie agent) {
         AgentDeSaisieDTO dto = new AgentDeSaisieDTO();
         dto.setId(agent.getId());
@@ -14,7 +13,6 @@ public class AgentDeSaisieMapper {
         dto.setPassword(agent.getPassword());
         return dto;
     }
-
     public AgentDeSaisie toEntity(AgentDeSaisieDTO dto) {
         AgentDeSaisie agent = new AgentDeSaisie();
         agent.setId(dto.getId());
