@@ -38,17 +38,57 @@ public class CamionService {
     public Camion enregistrerSortie(String numeroChassis, SortieCamionDTO dto) {
         Camion camion = camionRepo.findByNumeroChassis(numeroChassis)
                 .orElseThrow(() -> new RuntimeException("Camion non trouvé"));
+
+        // 🔧 NORMALISATION DE LA DESTINATION - VOICI LA CORRECTION !
+        String destinationNormalisee = normaliserDestination(dto.getDestination());
+
         Livraison livraison = Livraison.builder()
-                .destination(dto.getDestination())
+                .destination(destinationNormalisee) // ✅ Utiliser la destination normalisée
                 .nomChauffeurSortie(dto.getNomChauffeurSortie())
                 .prenomChauffeurSortie(dto.getPrenomChauffeurSortie())
                 .cinChauffeurSortie(dto.getCinChauffeurSortie())
                 .entreprise(dto.getEntreprise())
                 .dateSortie(LocalDateTime.now())
                 .build();
+
         camion.setLivraison(livraison);
         camion.setDateSortie(livraison.getDateSortie());
+
+        // 🔧 DEBUG - Afficher les valeurs pour vérifier
+        System.out.println("🔍 DESTINATION REÇUE: " + dto.getDestination());
+        System.out.println("🔍 DESTINATION NORMALISÉE: " + destinationNormalisee);
+
         return camionRepo.save(camion);
+    }
+
+    // 🆕 MÉTHODE POUR NORMALISER LES DESTINATIONS
+    private String normaliserDestination(String destination) {
+        if (destination == null || destination.trim().isEmpty()) {
+            return "PARK"; // Valeur par défaut
+        }
+
+        String dest = destination.toLowerCase().trim();
+
+        // Normalisation selon les valeurs envoyées par Angular
+        switch (dest) {
+            case "park":
+                return "PARK";
+            case "livraison finale":
+                return "LIVRAISON_FINALE";
+            case "prestation extérieure":
+                return "PRESTATION_EXTERIEURE";
+            default:
+                // Fallback intelligent
+                if (dest.contains("park") || dest.contains("parking")) {
+                    return "PARK";
+                } else if (dest.contains("livraison") || dest.contains("final")) {
+                    return "LIVRAISON_FINALE";
+                } else if (dest.contains("prestation") || dest.contains("extérieur")) {
+                    return "PRESTATION_EXTERIEURE";
+                } else {
+                    return "PARK"; // Valeur par défaut
+                }
+        }
     }
 
     public Optional<Camion> getCamion(String numeroChassis) {
@@ -59,13 +99,11 @@ public class CamionService {
         return camionRepo.findAll();
     }
 
-    // 🆕 MÉTHODE CORRIGÉE POUR LA MODIFICATION
+    // Méthode de modification existante...
     public Camion modifierCamion(String numeroChassis, Map<String, String> modifications) {
-        // Récupérer le camion existant - CORRECTION: utiliser camionRepo au lieu de CamionRepository
         Camion camion = camionRepo.findByNumeroChassis(numeroChassis)
                 .orElseThrow(() -> new RuntimeException("Camion non trouvé avec le châssis : " + numeroChassis));
 
-        // Mettre à jour les champs modifiables uniquement
         if (modifications.containsKey("marque") && modifications.get("marque") != null) {
             camion.setMarque(modifications.get("marque"));
         }
@@ -74,12 +112,10 @@ public class CamionService {
             camion.setModele(modifications.get("modele"));
         }
 
-        // CORRECTION: Modifier les informations du chauffeur via l'objet chauffeurEntree
         if (modifications.containsKey("nomChauffeur") && modifications.get("nomChauffeur") != null) {
             if (camion.getChauffeurEntree() != null) {
                 camion.getChauffeurEntree().setNom(modifications.get("nomChauffeur"));
             } else {
-                // Si pas de chauffeur, en créer un nouveau
                 Chauffeur chauffeur = Chauffeur.builder()
                         .nom(modifications.get("nomChauffeur"))
                         .prenom(camion.getChauffeurEntree() != null ?
@@ -93,7 +129,6 @@ public class CamionService {
             if (camion.getChauffeurEntree() != null) {
                 camion.getChauffeurEntree().setPrenom(modifications.get("prenomChauffeur"));
             } else {
-                // Si pas de chauffeur, en créer un nouveau
                 Chauffeur chauffeur = Chauffeur.builder()
                         .nom(camion.getChauffeurEntree() != null ?
                                 camion.getChauffeurEntree().getNom() : "")
@@ -103,7 +138,6 @@ public class CamionService {
             }
         }
 
-        // Sauvegarder et retourner le camion modifié - CORRECTION: utiliser camionRepo
         return camionRepo.save(camion);
     }
 }
